@@ -6,6 +6,7 @@ import os
 import json
 import re
 from functools import wraps
+from backend import app
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
