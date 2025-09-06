@@ -1,4 +1,5 @@
-from backend import app
+from app import app  # import your Flask app
+import vercel_wsgi
 
-# Vercel looks for this
-handler = app
+# Vercel looks for 'handler'
+handler = vercel_wsgi.handle(app)
