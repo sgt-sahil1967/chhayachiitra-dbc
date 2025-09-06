@@ -1,3 +1,5 @@
+with app.app_context():
+    db.create_all()
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -9,7 +11,7 @@ from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-change-in-production'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///brand_manager.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/brand_manager.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)  # 8 hour session timeout
@@ -18,6 +20,10 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 db = SQLAlchemy(app)
+
+# Ensure database is initialized on Vercel
+with app.app_context():
+    db.create_all()
 
 class LoginAttempt(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -121,5 +127,5 @@ def init_db():
     with app.app_context():
         db.create_all()
 
-# Vercel entrypoint
+# Vercel entrypoint using WSGI adapter
 handler = app
