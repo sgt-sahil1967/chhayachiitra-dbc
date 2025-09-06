@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}{{ brand.name }} - Brand Manager{% endblock %}
+
+{% block content %}
+<div class="card" style="border-left: 4px solid {{ brand.color }};">
+    <div class="card-header">
+        <div>
+            <h1 class="card-title" style="color: {{ brand.color }};">
+                <i class="fas fa-tag"></i> {{ brand.name }}
+            </h1>
+            {% if brand.description %}
+            <p style="color: #6b7280; margin-top: 0.5rem;">{{ brand.description }}</p>
+            {% endif %}
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <div style="width: 2rem; height: 2rem; background-color: {{ brand.color }}; border-radius: 0.5rem; border: 2px solid #e5e7eb;"></div>
+            <a href="{{ url_for('edit_brand', brand_id=brand.id) }}" class="btn btn-secondary">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-4" style="margin-bottom: 2rem;">
+    <div class="card">
+        <div style="text-align: center;">
+            <div style="font-size: 2rem; font-weight: 600; color: {{ brand.color }};">{{ tasks|length }}</div>
+            <div style="color: #6b7280; font-size: 0.875rem;">Total Tasks</div>
+        </div>
+    </div>
+    <div class="card">
+        <div style="text-align: center;">
+            <div style="font-size: 2rem; font-weight: 600; color: {{ brand.color }};">{{ tasks|selectattr('status', 'equalto', 'todo')|list|length }}</div>
+            <div style="color: #6b7280; font-size: 0.875rem;">Pending Tasks</div>
+        </div>
+    </div>
+    <div class="card">
+        <div style="text-align: center;">
+            <div style="font-size: 2rem; font-weight: 600; color: {{ brand.color }};">{{ shoots|length }}</div>
+            <div style="color: #6b7280; font-size: 0.875rem;">Total Shoots</div>
+        </div>
+    </div>
+    <div class="card">
+        <div style="text-align: center;">
+            <div style="font-size: 2rem; font-weight: 600; color: {{ brand.color }};">{{ content_items|length }}</div>
+            <div style="color: #6b7280; font-size: 0.875rem;">Content Items</div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-3">
+    <!-- Recent Tasks -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-tasks"></i> Recent Tasks
+            </h2>
+            <a href="{{ url_for('tasks') }}?brand={{ brand.id }}" class="btn btn-sm btn-secondary">View All</a>
+        </div>
+        
+        {% if tasks %}
+            {% for task in tasks[:5] %}
+            <div class="task-item" style="padding: 0.75rem; border-left: 4px solid {{ brand.color }}; margin-bottom: 0.5rem; background-color: #f9fafb; border-radius: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <h4 style="font-weight: 600; margin-bottom: 0.25rem;">{{ task.title }}</h4>
+                        {% if task.due_date %}
+                        <p style="color: #ef4444; font-size: 0.75rem;">
+                            <i class="fas fa-calendar"></i> Due: {{ task.due_date.strftime('%m/%d/%Y') }}
+                        </p>
+                        {% endif %}
+                    </div>
+                    <span class="btn btn-sm status-{{ task.status.replace('_', '-') }}">{{ task.status.replace('_', ' ').title() }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #6b7280; text-align: center; padding: 2rem;">No tasks yet</p>
+        {% endif %}
+    </div>
+
+    <!-- Upcoming Shoots -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-camera"></i> Upcoming Shoots
+            </h2>
+            <a href="{{ url_for('shoots') }}?brand={{ brand.id }}" class="btn btn-sm btn-secondary">View All</a>
+        </div>
+        
+        {% if shoots %}
+            {% for shoot in shoots[:5] %}
+            <div class="shoot-item" style="padding: 0.75rem; border-left: 4px solid {{ brand.color }}; margin-bottom: 0.5rem; background-color: #f9fafb; border-radius: 0.5rem;">
+                <h4 style="font-weight: 600; margin-bottom: 0.25rem;">{{ shoot.title }}</h4>
+                <p style="color: #3b82f6; font-size: 0.75rem; margin-bottom: 0.25rem;">
+                    <i class="fas fa-calendar"></i> {{ shoot.shoot_date.strftime('%m/%d/%Y') }}
+                </p>
+                {% if shoot.location %}
+                <p style="color: #6b7280; font-size: 0.75rem;">
+                    <i class="fas fa-map-marker-alt"></i> {{ shoot.location }}
+                </p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #6b7280; text-align: center; padding: 2rem;">No shoots scheduled</p>
+        {% endif %}
+    </div>
+
+    <!-- Content Items -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fas fa-folder"></i> Content Items
+            </h2>
+            <a href="{{ url_for('content_items') }}?brand={{ brand.id }}" class="btn btn-sm btn-secondary">View All</a>
+        </div>
+        
+        {% if content_items %}
+            {% for item in content_items[:5] %}
+            <div class="content-item" style="padding: 0.75rem; border-left: 4px solid {{ brand.color }}; margin-bottom: 0.5rem; background-color: #f9fafb; border-radius: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <h4 style="font-weight: 600; margin-bottom: 0.25rem;">{{ item.title }}</h4>
+                        <p style="color: #6b7280; font-size: 0.75rem;">{{ item.content_type|title }}</p>
+                    </div>
+                    <a href="{{ item.file_url }}" target="_blank" class="btn btn-sm btn-primary">
+                        <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: #6b7280; text-align: center; padding: 2rem;">No content items yet</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+    <div class="card-header">
+        <h2 class="card-title">
+            <i class="fas fa-plus"></i> Quick Actions
+        </h2>
+    </div>
+    
+    <div class="grid grid-4">
+        <a href="{{ url_for('new_task') }}?brand={{ brand.id }}" class="btn btn-primary" style="padding: 1.5rem; text-align: center; flex-direction: column; gap: 0.5rem;">
+            <i class="fas fa-plus-circle" style="font-size: 1.5rem;"></i>
+            <span>Add Task</span>
+        </a>
+        <a href="{{ url_for('new_shoot') }}?brand={{ brand.id }}" class="btn btn-primary" style="padding: 1.5rem; text-align: center; flex-direction: column; gap: 0.5rem;">
+            <i class="fas fa-camera" style="font-size: 1.5rem;"></i>
+            <span>Schedule Shoot</span>
+        </a>
+        <a href="{{ url_for('new_content_item') }}?brand={{ brand.id }}" class="btn btn-primary" style="padding: 1.5rem; text-align: center; flex-direction: column; gap: 0.5rem;">
+            <i class="fas fa-file-plus" style="font-size: 1.5rem;"></i>
+            <span>Add Content</span>
+        </a>
+        <a href="{{ url_for('content_calendar') }}?brand={{ brand.id }}" class="btn btn-primary" style="padding: 1.5rem; text-align: center; flex-direction: column; gap: 0.5rem;">
+            <i class="fas fa-calendar-alt" style="font-size: 1.5rem;"></i>
+            <span>View Calendar</span>
+        </a>
+    </div>
+</div>
+{% endblock %}

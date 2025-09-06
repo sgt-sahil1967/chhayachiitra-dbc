@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Content Calendar - Brand Manager{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-calendar-alt"></i> Content Calendar
+        </h1>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <select id="brand-filter" class="form-select" style="width: auto;">
+                <option value="">All Brands</option>
+                {% for brand in brands %}
+                <option value="{{ brand.id }}" style="color: {{ brand.color }};">{{ brand.name }}</option>
+                {% endfor %}
+            </select>
+            <div class="view-toggle">
+                <button id="calendar-view" class="btn btn-secondary active">
+                    <i class="fas fa-calendar"></i> Calendar
+                </button>
+                <button id="folder-view" class="btn btn-secondary">
+                    <i class="fas fa-folder"></i> Folders
+                </button>
+            </div>
+            <button onclick="openNewContentModal()" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Content
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Calendar View -->
+<div id="calendar-container" class="calendar-view">
+    <div class="calendar-header">
+        <button id="prev-month" class="btn btn-secondary">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <h2 id="current-month"></h2>
+        <button id="next-month" class="btn btn-secondary">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+    
+    <div class="calendar-grid">
+        <div class="calendar-day-header">Sun</div>
+        <div class="calendar-day-header">Mon</div>
+        <div class="calendar-day-header">Tue</div>
+        <div class="calendar-day-header">Wed</div>
+        <div class="calendar-day-header">Thu</div>
+        <div class="calendar-day-header">Fri</div>
+        <div class="calendar-day-header">Sat</div>
+        
+        <!-- Calendar days will be populated by JavaScript -->
+    </div>
+</div>
+
+<!-- Folder View -->
+<div id="folder-container" class="folder-view" style="display: none;">
+    <div class="folder-navigation">
+        <div class="breadcrumb">
+            <span class="breadcrumb-item active" data-path="">
+                <i class="fas fa-home"></i> All Content
+            </span>
+        </div>
+        <button onclick="openNewFolderModal()" class="btn btn-sm btn-secondary">
+            <i class="fas fa-folder-plus"></i> New Folder
+        </button>
+    </div>
+    
+    <div class="content-grid">
+        <!-- Folders -->
+        <div class="folders-section">
+            <h3 style="margin-bottom: 1rem; color: #374151;">
+                <i class="fas fa-folder"></i> Folders
+            </h3>
+            <div class="folders-grid" id="folders-grid">
+                <!-- Folders will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <!-- Content Items -->
+        <div class="content-items-section">
+            <h3 style="margin-bottom: 1rem; color: #374151;">
+                <i class="fas fa-file"></i> Content Items
+            </h3>
+            <div class="content-items-grid" id="content-items-grid">
+                {% for item in content_items %}
+                <div class="content-item-card" data-brand-id="{{ item.brand_id }}" data-folder="{{ item.folder_path or '' }}">
+                    <div class="content-item-header" style="border-left: 4px solid {{ item.brand.color }};">
+                        <div class="content-type-icon">
+                            {% if item.content_type == 'image' %}
+                            <i class="fas fa-image"></i>
+                            {% elif item.content_type == 'video' %}
+                            <i class="fas fa-video"></i>
+                            {% elif item.content_type == 'document' %}
+                            <i class="fas fa-file-alt"></i>
+                            {% else %}
+                            <i class="fas fa-file"></i>
+                            {% endif %}
+                        </div>
+                        <div class="content-item-info">
+                            <h4 class="content-item-title">{{ item.title }}</h4>
+                            <div class="content-item-brand" style="color: {{ item.brand.color }};">
+                                <i class="fas fa-tag"></i> {{ item.brand.name }}
+                            </div>
+                            <div class="content-item-type">{{ item.content_type|title }}</div>
+                        </div>
+                        <div class="content-item-actions">
+                            <a href="{{ item.file_url }}" target="_blank" class="btn btn-sm btn-primary">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                            <button onclick="editContentItem({{ item.id }})" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteContentItem({{ item.id }})" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% if item.description %}
+                    <div class="content-item-description">
+                        {{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}
+                    </div>
+                    {% endif %}
+                    <div class="content-item-footer">
+                        <div class="content-item-date">
+                            <i class="fas fa-calendar"></i>
+                            {{ item.created_at.strftime('%m/%d/%Y') }}
+                        </div>
+                        {% if item.folder_path %}
+                        <div class="content-item-folder">
+                            <i class="fas fa-folder"></i>
+                            {{ item.folder_path }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    {% if not content_items %}
+    <div class="card" style="text-align: center; padding: 3rem;">
+        <div style="color: #6b7280; margin-bottom: 1rem;">
+            <i class="fas fa-folder-open" style="font-size: 3rem; opacity: 0.3;"></i>
+        </div>
+        <h3 style="color: #374151; margin-bottom: 0.5rem;">No content items yet</h3>
+        <p style="color: #6b7280; margin-bottom: 2rem;">Add your first content item to get started.</p>
+        <button onclick="openNewContentModal()" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add First Content Item
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- New/Edit Content Modal -->
+<div id="content-modal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h2 id="content-modal-title">New Content Item</h2>
+            <button onclick="closeContentModal()" class="btn-close">&times;</button>
+        </div>
+        <form id="content-form" method="POST" action="{{ url_for('new_content_item') }}">
+            <input type="hidden" id="content-id" name="content_id">
+            
+            <div class="form-group">
+                <label for="content-title" class="form-label">Title</label>
+                <input type="text" id="content-title" name="title" class="form-input" required placeholder="e.g., Summer Campaign Hero Image">
+            </div>
+            
+            <div class="form-group">
+                <label for="content-description" class="form-label">Description</label>
+                <textarea id="content-description" name="description" class="form-input form-textarea" placeholder="Content description, usage notes..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="content-brand" class="form-label">Brand</label>
+                <select id="content-brand" name="brand_id" class="form-select" required>
+                    <option value="">Select Brand</option>
+                    {% for brand in brands %}
+                    <option value="{{ brand.id }}" style="color: {{ brand.color }};">{{ brand.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="content-type" class="form-label">Content Type</label>
+                <select id="content-type" name="content_type" class="form-select" required>
+                    <option value="">Select Type</option>
+                    <option value="image">Image</option>
+                    <option value="video">Video</option>
+                    <option value="document">Document</option>
+                    <option value="audio">Audio</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="content-url" class="form-label">File URL</label>
+                <input type="url" id="content-url" name="file_url" class="form-input" required placeholder="https://your-nas-server.com/path/to/file.jpg">
+                <small style="color: #6b7280; font-size: 0.75rem;">Enter the full URL to your NAS-hosted file</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="content-folder" class="form-label">Folder Path</label>
+                <input type="text" id="content-folder" name="folder_path" class="form-input" placeholder="e.g., campaigns/summer-2024">
+                <small style="color: #6b7280; font-size: 0.75rem;">Optional: Organize content in virtual folders</small>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Content
+                </button>
+                <button type="button" onclick="closeContentModal()" class="btn btn-secondary">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- New Folder Modal -->
+<div id="folder-modal" class="modal">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h2>Create New Folder</h2>
+            <button onclick="closeFolderModal()" class="btn-close">&times;</button>
+        </div>
+        <form id="folder-form">
+            <div class="form-group">
+                <label for="folder-name" class="form-label">Folder Name</label>
+                <input type="text" id="folder-name" name="folder_name" class="form-input" required placeholder="e.g., Summer Campaign">
+            </div>
+            
+            <div class="form-group">
+                <label for="folder-parent" class="form-label">Parent Folder</label>
+                <input type="text" id="folder-parent" name="parent_path" class="form-input" placeholder="Leave empty for root folder">
+                <small style="color: #6b7280; font-size: 0.75rem;">e.g., campaigns/2024</small>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-folder-plus"></i> Create Folder
+                </button>
+                <button type="button" onclick="closeFolderModal()" class="btn btn-secondary">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Pass content data to JavaScript
+const contentData = {{ content_json | safe }};
+const brandsData = {{ brands_json | safe }};
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/content.js') }}"></script>
+{% endblock %}

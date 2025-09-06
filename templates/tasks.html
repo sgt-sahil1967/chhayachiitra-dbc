@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks - Brand Manager{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-tasks"></i> Task Board
+        </h1>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <select id="brand-filter" class="form-select" style="width: auto;">
+                <option value="">All Brands</option>
+                {% for brand in brands %}
+                <option value="{{ brand.id }}" style="color: {{ brand.color }};">{{ brand.name }}</option>
+                {% endfor %}
+            </select>
+            <button onclick="openNewTaskModal()" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Task
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="kanban-board">
+    <div class="kanban-column" data-status="todo">
+        <div class="kanban-header">
+            <h3><i class="fas fa-circle" style="color: #f59e0b;"></i> To Do</h3>
+            <span class="task-count">{{ todo_tasks|length }}</span>
+        </div>
+        <div class="kanban-tasks" id="todo-tasks">
+            {% for task in todo_tasks %}
+            <div class="task-card" draggable="true" data-task-id="{{ task.id }}" data-brand-id="{{ task.brand_id }}">
+                <div class="task-header">
+                    <div class="task-brand" style="background-color: {{ task.brand.color }};">
+                        {{ task.brand.name }}
+                    </div>
+                    <div class="task-priority priority-{{ task.priority }}">
+                        {{ task.priority|title }}
+                    </div>
+                </div>
+                <h4 class="task-title">{{ task.title }}</h4>
+                {% if task.description %}
+                <p class="task-description">{{ task.description[:100] }}{% if task.description|length > 100 %}...{% endif %}</p>
+                {% endif %}
+                <div class="task-footer">
+                    {% if task.due_date %}
+                    <div class="task-due-date {% if task.due_date < today %}overdue{% elif task.due_date == today %}due-today{% endif %}">
+                        <i class="fas fa-calendar"></i>
+                        {{ task.due_date.strftime('%m/%d') }}
+                    </div>
+                    {% endif %}
+                    <div class="task-actions">
+                        <button onclick="editTask({{ task.id }})" class="btn-icon">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteTask({{ task.id }})" class="btn-icon btn-danger">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button onclick="openNewTaskModal('todo')" class="add-task-btn">
+            <i class="fas fa-plus"></i> Add Task
+        </button>
+    </div>
+
+    <div class="kanban-column" data-status="in_progress">
+        <div class="kanban-header">
+            <h3><i class="fas fa-circle" style="color: #3b82f6;"></i> In Progress</h3>
+            <span class="task-count">{{ in_progress_tasks|length }}</span>
+        </div>
+        <div class="kanban-tasks" id="in-progress-tasks">
+            {% for task in in_progress_tasks %}
+            <div class="task-card" draggable="true" data-task-id="{{ task.id }}" data-brand-id="{{ task.brand_id }}">
+                <div class="task-header">
+                    <div class="task-brand" style="background-color: {{ task.brand.color }};">
+                        {{ task.brand.name }}
+                    </div>
+                    <div class="task-priority priority-{{ task.priority }}">
+                        {{ task.priority|title }}
+                    </div>
+                </div>
+                <h4 class="task-title">{{ task.title }}</h4>
+                {% if task.description %}
+                <p class="task-description">{{ task.description[:100] }}{% if task.description|length > 100 %}...{% endif %}</p>
+                {% endif %}
+                <div class="task-footer">
+                    {% if task.due_date %}
+                    <div class="task-due-date {% if task.due_date < today %}overdue{% elif task.due_date == today %}due-today{% endif %}">
+                        <i class="fas fa-calendar"></i>
+                        {{ task.due_date.strftime('%m/%d') }}
+                    </div>
+                    {% endif %}
+                    <div class="task-actions">
+                        <button onclick="editTask({{ task.id }})" class="btn-icon">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteTask({{ task.id }})" class="btn-icon btn-danger">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button onclick="openNewTaskModal('in_progress')" class="add-task-btn">
+            <i class="fas fa-plus"></i> Add Task
+        </button>
+    </div>
+
+    <div class="kanban-column" data-status="done">
+        <div class="kanban-header">
+            <h3><i class="fas fa-circle" style="color: #10b981;"></i> Done</h3>
+            <span class="task-count">{{ done_tasks|length }}</span>
+        </div>
+        <div class="kanban-tasks" id="done-tasks">
+            {% for task in done_tasks %}
+            <div class="task-card" draggable="true" data-task-id="{{ task.id }}" data-brand-id="{{ task.brand_id }}">
+                <div class="task-header">
+                    <div class="task-brand" style="background-color: {{ task.brand.color }};">
+                        {{ task.brand.name }}
+                    </div>
+                    <div class="task-priority priority-{{ task.priority }}">
+                        {{ task.priority|title }}
+                    </div>
+                </div>
+                <h4 class="task-title">{{ task.title }}</h4>
+                {% if task.description %}
+                <p class="task-description">{{ task.description[:100] }}{% if task.description|length > 100 %}...{% endif %}</p>
+                {% endif %}
+                <div class="task-footer">
+                    {% if task.due_date %}
+                    <div class="task-due-date">
+                        <i class="fas fa-calendar"></i>
+                        {{ task.due_date.strftime('%m/%d') }}
+                    </div>
+                    {% endif %}
+                    <div class="task-actions">
+                        <button onclick="editTask({{ task.id }})" class="btn-icon">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteTask({{ task.id }})" class="btn-icon btn-danger">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <button onclick="openNewTaskModal('done')" class="add-task-btn">
+            <i class="fas fa-plus"></i> Add Task
+        </button>
+    </div>
+</div>
+
+<!-- New Task Modal -->
+<div id="task-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modal-title">New Task</h2>
+            <button onclick="closeTaskModal()" class="btn-close">&times;</button>
+        </div>
+        <form id="task-form" method="POST" action="{{ url_for('new_task') }}">
+            <input type="hidden" id="task-id" name="task_id">
+            <div class="form-group">
+                <label for="task-title" class="form-label">Title</label>
+                <input type="text" id="task-title" name="title" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="task-description" class="form-label">Description</label>
+                <textarea id="task-description" name="description" class="form-input form-textarea"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="task-brand" class="form-label">Brand</label>
+                <select id="task-brand" name="brand_id" class="form-select" required>
+                    <option value="">Select Brand</option>
+                    {% for brand in brands %}
+                    <option value="{{ brand.id }}" style="color: {{ brand.color }};">{{ brand.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="task-priority" class="form-label">Priority</label>
+                <select id="task-priority" name="priority" class="form-select">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="task-due-date" class="form-label">Due Date</label>
+                <input type="date" id="task-due-date" name="due_date" class="form-input">
+            </div>
+            
+            <div class="form-group">
+                <label for="task-status" class="form-label">Status</label>
+                <select id="task-status" name="status" class="form-select">
+                    <option value="todo">To Do</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="done">Done</option>
+                </select>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Task
+                </button>
+                <button type="button" onclick="closeTaskModal()" class="btn btn-secondary">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Pass today's date to JavaScript
+const today = new Date('{{ today }}');
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/kanban.js') }}"></script>
+{% endblock %}

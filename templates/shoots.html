@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}Shoots - Brand Manager{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-camera"></i> Shoot Planner
+        </h1>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <select id="brand-filter" class="form-select" style="width: auto;">
+                <option value="">All Brands</option>
+                {% for brand in brands %}
+                <option value="{{ brand.id }}" style="color: {{ brand.color }};">{{ brand.name }}</option>
+                {% endfor %}
+            </select>
+            <div class="view-toggle">
+                <button id="calendar-view" class="btn btn-secondary active">
+                    <i class="fas fa-calendar"></i> Calendar
+                </button>
+                <button id="list-view" class="btn btn-secondary">
+                    <i class="fas fa-list"></i> List
+                </button>
+            </div>
+            <button onclick="openNewShootModal()" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Shoot
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Calendar View -->
+<div id="calendar-container" class="calendar-view">
+    <div class="calendar-header">
+        <button id="prev-month" class="btn btn-secondary">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <h2 id="current-month"></h2>
+        <button id="next-month" class="btn btn-secondary">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+    
+    <div class="calendar-grid">
+        <div class="calendar-day-header">Sun</div>
+        <div class="calendar-day-header">Mon</div>
+        <div class="calendar-day-header">Tue</div>
+        <div class="calendar-day-header">Wed</div>
+        <div class="calendar-day-header">Thu</div>
+        <div class="calendar-day-header">Fri</div>
+        <div class="calendar-day-header">Sat</div>
+        
+        <!-- Calendar days will be populated by JavaScript -->
+    </div>
+</div>
+
+<!-- List View -->
+<div id="list-container" class="list-view" style="display: none;">
+    <div class="shoots-grid">
+        {% for shoot in shoots %}
+        <div class="shoot-card" data-brand-id="{{ shoot.brand_id }}">
+            <div class="shoot-header" style="border-left: 4px solid {{ shoot.brand.color }};">
+                <div class="shoot-date">
+                    <div class="date-day">{{ shoot.shoot_date.strftime('%d') }}</div>
+                    <div class="date-month">{{ shoot.shoot_date.strftime('%b') }}</div>
+                </div>
+                <div class="shoot-info">
+                    <h3 class="shoot-title">{{ shoot.title }}</h3>
+                    <div class="shoot-brand" style="color: {{ shoot.brand.color }};">
+                        <i class="fas fa-tag"></i> {{ shoot.brand.name }}
+                    </div>
+                    {% if shoot.location %}
+                    <div class="shoot-location">
+                        <i class="fas fa-map-marker-alt"></i> {{ shoot.location }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="shoot-actions">
+                    <button onclick="viewShoot({{ shoot.id }})" class="btn btn-sm btn-primary">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button onclick="editShoot({{ shoot.id }})" class="btn btn-sm btn-secondary">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteShoot({{ shoot.id }})" class="btn btn-sm btn-danger">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            {% if shoot.description %}
+            <div class="shoot-description">
+                {{ shoot.description[:150] }}{% if shoot.description|length > 150 %}...{% endif %}
+            </div>
+            {% endif %}
+            {% if shoot.attachments %}
+            <div class="shoot-attachments">
+                <i class="fas fa-paperclip"></i>
+                {{ (shoot.attachments | from_json) | length }} attachment(s)
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if not shoots %}
+    <div class="card" style="text-align: center; padding: 3rem;">
+        <div style="color: #6b7280; margin-bottom: 1rem;">
+            <i class="fas fa-camera" style="font-size: 3rem; opacity: 0.3;"></i>
+        </div>
+        <h3 style="color: #374151; margin-bottom: 0.5rem;">No shoots scheduled</h3>
+        <p style="color: #6b7280; margin-bottom: 2rem;">Plan your first shoot to get started.</p>
+        <button onclick="openNewShootModal()" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Schedule First Shoot
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- New/Edit Shoot Modal -->
+<div id="shoot-modal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h2 id="shoot-modal-title">New Shoot</h2>
+            <button onclick="closeShootModal()" class="btn-close">&times;</button>
+        </div>
+        <form id="shoot-form" method="POST" action="{{ url_for('new_shoot') }}">
+            <input type="hidden" id="shoot-id" name="shoot_id">
+            
+            <div class="form-group">
+                <label for="shoot-title" class="form-label">Shoot Title</label>
+                <input type="text" id="shoot-title" name="title" class="form-input" required placeholder="e.g., Summer Collection Photoshoot">
+            </div>
+            
+            <div class="form-group">
+                <label for="shoot-description" class="form-label">Description</label>
+                <textarea id="shoot-description" name="description" class="form-input form-textarea" placeholder="Shoot details, requirements, notes..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="shoot-brand" class="form-label">Brand</label>
+                <select id="shoot-brand" name="brand_id" class="form-select" required>
+                    <option value="">Select Brand</option>
+                    {% for brand in brands %}
+                    <option value="{{ brand.id }}" style="color: {{ brand.color }};">{{ brand.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="shoot-date" class="form-label">Shoot Date</label>
+                <input type="date" id="shoot-date" name="shoot_date" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="shoot-location" class="form-label">Location</label>
+                <input type="text" id="shoot-location" name="location" class="form-input" placeholder="Studio, outdoor location, etc.">
+            </div>
+            
+            <div class="form-group">
+                <label for="shoot-attachments" class="form-label">Attachments (URLs)</label>
+                <div id="attachments-container">
+                    <div class="attachment-input">
+                        <input type="text" name="attachments[]" class="form-input" placeholder="https://your-nas-server.com/file1.pdf">
+                        <button type="button" onclick="removeAttachment(this)" class="btn btn-sm btn-danger" style="margin-left: 0.5rem;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="button" onclick="addAttachment()" class="btn btn-sm btn-secondary" style="margin-top: 0.5rem;">
+                    <i class="fas fa-plus"></i> Add Attachment
+                </button>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Shoot
+                </button>
+                <button type="button" onclick="closeShootModal()" class="btn btn-secondary">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- View Shoot Modal -->
+<div id="view-shoot-modal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h2 id="view-shoot-title"></h2>
+            <button onclick="closeViewShootModal()" class="btn-close">&times;</button>
+        </div>
+        <div id="view-shoot-content" style="padding: 1.5rem;">
+            <!-- Content will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
+
+<script>
+// Pass shoots data to JavaScript
+const shootsData = {{ shoots_json | safe }};
+const brandsData = {{ brands_json | safe }};
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/shoots.js') }}"></script>
+{% endblock %}
